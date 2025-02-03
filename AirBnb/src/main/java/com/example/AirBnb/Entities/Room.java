@@ -41,7 +41,7 @@ public class Room {
     @Column(nullable = false)
     private Integer capacity;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hotel_id",nullable = false)
     private Hotel hotel;
 }
