@@ -2,12 +2,14 @@ package com.example.AirBnb.Services;
 
 import com.example.AirBnb.Dto.HotelDto;
 import com.example.AirBnb.Entities.Hotel;
+import com.example.AirBnb.Entities.Room;
 import com.example.AirBnb.Exception.ResourceNotFoundException;
 import com.example.AirBnb.Repositories.HotelRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -23,6 +25,7 @@ public class HotelServiceImpl implements HotelService{
 
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
+    private final InventoryService inventoryService;
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
         log.info("Creating a new hotel with name: {}",hotelDto.getName());
@@ -69,12 +72,37 @@ public class HotelServiceImpl implements HotelService{
     }
 
     @Override
+    @Transactional
     public void deleteHotelById(Long id) {
-        Hotel hotelEntity = hotelRepository.findById(id)
+        Hotel hotelEntity = hotelRepository
+                .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("There is no hotel with id: " + id));
+
+        log.info("Deleting the inventory of all the rooms in hotel with id:"+id);
+        //Deleting inventory
+        for(Room room:hotelEntity.getRooms()){
+            inventoryService.deleteFutureInventory(room);
+        }
         log.info("Deleting the Hotel with id:"+id);
         hotelRepository.deleteById(id);
     }
 
+    @Override
+    @Transactional
+    public void activateHotel(Long hotelId)
+    {
+        Hotel hotelEntity=hotelRepository.findById(hotelId)
+                .orElseThrow(()->new ResourceNotFoundException("There is no hotel with id:"+hotelId));
+        log.info("Activating the hotel with id:"+hotelId);
+        hotelEntity.setActive(true);
+        hotelRepository.save(hotelEntity);
+        //If it is acive then go through all the rooms and store
+        // them in inventory, do it only once
+        for(Room room:hotelEntity.getRooms())
+        {
+            inventoryService.initializeRoomForAYear(room);
+        }
+
+    }
 
 }

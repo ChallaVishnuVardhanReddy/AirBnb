@@ -53,6 +53,14 @@ public class HotelController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{hotelid}")
+    public ResponseEntity<Void> activateHotelById(@PathVariable Long hotelid)
+    {
+        log.info("Attempting to activate hotel with id:"+hotelid);
+        hotelService.activateHotel(hotelid);
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 }
