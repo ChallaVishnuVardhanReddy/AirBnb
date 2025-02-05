@@ -5,6 +5,7 @@ import com.example.AirBnb.Entities.Hotel;
 import com.example.AirBnb.Entities.Room;
 import com.example.AirBnb.Exception.ResourceNotFoundException;
 import com.example.AirBnb.Repositories.HotelRepository;
+import com.example.AirBnb.Repositories.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -26,6 +27,7 @@ public class HotelServiceImpl implements HotelService{
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
     private final InventoryService inventoryService;
+    private final RoomRepository roomRepository;
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
         log.info("Creating a new hotel with name: {}",hotelDto.getName());
@@ -81,7 +83,8 @@ public class HotelServiceImpl implements HotelService{
         log.info("Deleting the inventory of all the rooms in hotel with id:"+id);
         //Deleting inventory
         for(Room room:hotelEntity.getRooms()){
-            inventoryService.deleteFutureInventory(room);
+            inventoryService.deleteAllInventories(room);
+            roomRepository.deleteById(room.getId());
         }
         log.info("Deleting the Hotel with id:"+id);
         hotelRepository.deleteById(id);
