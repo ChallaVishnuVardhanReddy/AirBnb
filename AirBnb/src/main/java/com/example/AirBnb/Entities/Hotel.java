@@ -1,5 +1,6 @@
 package com.example.AirBnb.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -45,7 +46,7 @@ public class Hotel {
 
     @ManyToOne
     private User owner;
-
+    
     @OneToMany(mappedBy = "hotel")
     private List<Room> rooms;
 

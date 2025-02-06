@@ -1,6 +1,8 @@
 package com.example.AirBnb.Services;
 
 import com.example.AirBnb.Dto.HotelDto;
+import com.example.AirBnb.Dto.HotelInfoDto;
+import com.example.AirBnb.Dto.RoomDto;
 import com.example.AirBnb.Entities.Hotel;
 import com.example.AirBnb.Entities.Room;
 import com.example.AirBnb.Exception.ResourceNotFoundException;
@@ -106,6 +108,22 @@ public class HotelServiceImpl implements HotelService{
             inventoryService.initializeRoomForAYear(room);
         }
 
+    }
+//TODO:If paginated write a derived query in room repository and use the hotel id to get the rooms and paginate them. you need to send that
+// paginated content so use .getContent() to make sure there won't be any issues with Page<RoomDto> and List<RoomDto>
+    @Override
+    public HotelInfoDto getHotelInfoById(Long hotelId) {
+        Hotel hotelEntity=hotelRepository.findById(hotelId)
+                .orElseThrow(()->new ResourceNotFoundException("There is no hotel with id:"+hotelId));
+        log.info("Getting the hotel and its room details, hotelid:"+hotelId);
+        HotelInfoDto hotelInfoDto= HotelInfoDto.builder()
+                .hotel(modelMapper.map(hotelEntity,HotelDto.class))
+                .rooms(hotelEntity.getRooms()
+                        .stream()
+                        .map((element) -> modelMapper.map(element, RoomDto.class))
+                        .collect(Collectors.toList()))
+                .build();
+        return hotelInfoDto;
     }
 
 }
