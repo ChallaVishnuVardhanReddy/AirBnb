@@ -5,12 +5,15 @@ import com.example.AirBnb.Dto.HotelInfoDto;
 import com.example.AirBnb.Dto.RoomDto;
 import com.example.AirBnb.Entities.Hotel;
 import com.example.AirBnb.Entities.Room;
+import com.example.AirBnb.Entities.User;
 import com.example.AirBnb.Exception.ResourceNotFoundException;
+import com.example.AirBnb.Exception.UnAuthorisedException;
 import com.example.AirBnb.Repositories.HotelRepository;
 import com.example.AirBnb.Repositories.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ReflectionUtils;
@@ -36,6 +39,8 @@ public class HotelServiceImpl implements HotelService{
         Hotel hotelEntity=modelMapper.map(hotelDto,Hotel.class);
         //Making hotel active to false, when the hotel is created it should be false
         hotelEntity.setActive(false);
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        hotelEntity.setOwner(user);
         hotelEntity=hotelRepository.save(hotelEntity);
         log.info("Created a new hotel with Id: {}",hotelDto.getId());
         return modelMapper.map(hotelEntity,HotelDto.class);
@@ -45,6 +50,12 @@ public class HotelServiceImpl implements HotelService{
     public HotelDto getHotelById(Long id) {
         log.info("Getting the hotel with id: {}",id);
        Hotel hotelEntity= hotelRepository.findById(id).orElseThrow(()->new ResourceNotFoundException("Hotel not found with id:"+id));
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.equals(hotelEntity.getOwner())){
+            throw new UnAuthorisedException("User doesn't own this hotel with id:"+id);
+        }
+
         return modelMapper.map(hotelEntity,HotelDto.class);
     }
 
@@ -62,11 +73,17 @@ public class HotelServiceImpl implements HotelService{
 
     @Override
     public HotelDto updateHotelById(Long id, HotelDto hotelDto) {
-
+        log.info("Updating the hotel with id:{}"+id);
         Hotel hotelEntity=hotelRepository.findById(id).orElse(null);
         if(hotelEntity==null)
         {
             throw new ResourceNotFoundException("There is no hotel with id:"+id);
+        }
+
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.equals(hotelEntity.getOwner())){
+            throw new UnAuthorisedException("User doesn't own this hotel with id:"+id);
         }
         hotelDto.setId(id);
         hotelEntity=modelMapper.map(hotelDto,Hotel.class);
@@ -82,6 +99,11 @@ public class HotelServiceImpl implements HotelService{
                 .findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("There is no hotel with id: " + id));
 
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.equals(hotelEntity.getOwner())){
+            throw new UnAuthorisedException("User doesn't own this hotel with id:"+id);
+        }
         log.info("Deleting the inventory of all the rooms in hotel with id:"+id);
         //Deleting inventory
         for(Room room:hotelEntity.getRooms()){
@@ -98,6 +120,12 @@ public class HotelServiceImpl implements HotelService{
     {
         Hotel hotelEntity=hotelRepository.findById(hotelId)
                 .orElseThrow(()->new ResourceNotFoundException("There is no hotel with id:"+hotelId));
+
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.equals(hotelEntity.getOwner())){
+            throw new UnAuthorisedException("User doesn't own this hotel with id:"+hotelId);
+        }
         log.info("Activating the hotel with id:"+hotelId);
         hotelEntity.setActive(true);
         hotelRepository.save(hotelEntity);
@@ -111,6 +139,8 @@ public class HotelServiceImpl implements HotelService{
     }
 //TODO:If paginated write a derived query in room repository and use the hotel id to get the rooms and paginate them. you need to send that
 // paginated content so use .getContent() to make sure there won't be any issues with Page<RoomDto> and List<RoomDto>
+
+   //public method so no need to check for user
     @Override
     public HotelInfoDto getHotelInfoById(Long hotelId) {
         Hotel hotelEntity=hotelRepository.findById(hotelId)

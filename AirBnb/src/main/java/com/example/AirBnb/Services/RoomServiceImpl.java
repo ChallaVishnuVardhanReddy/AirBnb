@@ -3,12 +3,15 @@ package com.example.AirBnb.Services;
 import com.example.AirBnb.Dto.RoomDto;
 import com.example.AirBnb.Entities.Hotel;
 import com.example.AirBnb.Entities.Room;
+import com.example.AirBnb.Entities.User;
 import com.example.AirBnb.Exception.ResourceNotFoundException;
+import com.example.AirBnb.Exception.UnAuthorisedException;
 import com.example.AirBnb.Repositories.HotelRepository;
 import com.example.AirBnb.Repositories.RoomRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,12 @@ public class RoomServiceImpl implements RoomService{
         Hotel hotelEntity = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("There is no hotel with id: " +hotelId));
         Room room=modelMapper.map(roomDto,Room.class);
+
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        if(!user.equals(hotelEntity.getOwner())){
+            throw new UnAuthorisedException("User doesn't own this hotel with id:"+hotelId);
+        }
         room.setHotel(hotelEntity);
         // Save the room entity first
         room = roomRepository.save(room);
@@ -66,7 +75,11 @@ public class RoomServiceImpl implements RoomService{
        log.info("Deleting room with id:"+roomId);
         Room room=roomRepository.findById(roomId)
                 .orElseThrow(()->new ResourceNotFoundException("There is no room with id:"+roomId));
+        User user= (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
+        if(!user.equals(room.getHotel().getOwner())){
+            throw new UnAuthorisedException("User doesn't own this rooom with id:"+roomId);
+        }
        //Deleting rooms in inventroy
         log.info("Deleting the inventory of the room");
         inventoryService.deleteAllInventories(room);
