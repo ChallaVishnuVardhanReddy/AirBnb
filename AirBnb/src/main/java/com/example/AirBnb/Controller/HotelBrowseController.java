@@ -3,6 +3,7 @@ package com.example.AirBnb.Controller;
 
 import com.example.AirBnb.Dto.HotelDto;
 import com.example.AirBnb.Dto.HotelInfoDto;
+import com.example.AirBnb.Dto.HotelPriceDto;
 import com.example.AirBnb.Dto.HotelSearchRequest;
 import com.example.AirBnb.Services.HotelService;
 import com.example.AirBnb.Services.InventoryService;
@@ -21,9 +22,9 @@ public class HotelBrowseController {
     private final InventoryService inventoryService;
     private final HotelService hotelService;
     @GetMapping("/search")
-   public ResponseEntity<Page<HotelDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest){
+   public ResponseEntity<Page<HotelPriceDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest){
         log.info("Attempting to search for hotel in {} city,from {} to {}",hotelSearchRequest.getCity(),hotelSearchRequest.getStartDate(),hotelSearchRequest.getEndDate());
-        Page<HotelDto> page=inventoryService.searchHotels(hotelSearchRequest);
+        var page=inventoryService.searchHotels(hotelSearchRequest);
        return ResponseEntity.ok(page);
     }
     //TODO: can be paginated in future, just get additional page and size from pathvariable
