@@ -24,9 +24,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.example.AirBnb.Utils.AppUtils.getCurrentUser;
 
 @Service
 @Slf4j
@@ -234,12 +238,23 @@ public class BookingServiceImpl implements BookingService{
         return booking.getBookingStatus().name();
     }
 
+    @Override
+    public List<BookingDto> getAllBookingsByHotelId(Long hotelId) throws AccessDeniedException {
+          Hotel hotel=hotelRepository.findById(hotelId).orElseThrow(()->new ResourceNotFoundException("Hotel not found with Id:"+hotelId));
+          User user=getCurrentUser();
+          log.info("Getting all bookings of the user with id:{}",user.getId());
+          if(!user.equals(hotel.getOwner())){
+              throw new AccessDeniedException("You are not the owner of hotel with id:"+hotelId);
+          }
+         List<Booking> bookings= bookingRepository.findByHotel(hotel);
+         return bookings.stream()
+                 .map((element)->modelMapper.map(element, BookingDto.class))
+                 .collect(Collectors.toList());
+    }
+
     //if booking is created at less 10 min from current time, then booking not expired
     public boolean hasBookingExpired(Booking booking){
         return booking.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now());
     }
 
-    public User getCurrentUser(){
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-    }
 }

@@ -61,15 +61,24 @@ public class HotelServiceImpl implements HotelService{
 
     @Override
     public List<HotelDto> getAllHotels(){
-        log.info("Getting all hotels!");
+        //irrespective of ownership
+       /* log.info("Getting all hotels!");
         List<Hotel> hotels = hotelRepository.findAll();
         if (hotels.isEmpty()) {
             throw new ResourceNotFoundException("No Hotels Available");
         }
         return hotels.stream()
                 .map(hotelEntity->modelMapper.map(hotelEntity,HotelDto.class))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
+        // only of his ownership
+        User user= (User) getAllHotels();
+        log.info("Getting all hotels for the admin user:{}", user.getId());
+        List<Hotel> hotels = hotelRepository.findByOwner(user);
+         return hotels.stream().map((element)->modelMapper.map(element,HotelDto.class))
+                 .collect(Collectors.toList());
     }
+
+
 
     @Override
     public HotelDto updateHotelById(Long id, HotelDto hotelDto) {

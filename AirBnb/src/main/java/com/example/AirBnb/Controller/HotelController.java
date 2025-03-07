@@ -1,6 +1,8 @@
 package com.example.AirBnb.Controller;
 
+import com.example.AirBnb.Dto.BookingDto;
 import com.example.AirBnb.Dto.HotelDto;
+import com.example.AirBnb.Services.BookingService;
 import com.example.AirBnb.Services.HotelService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 @RestController
@@ -17,6 +20,8 @@ import java.util.List;
 public class HotelController {
 
     private final HotelService hotelService;
+    private final BookingService bookingService;
+
     @PostMapping
     public ResponseEntity<HotelDto> createNewHotel(@RequestBody HotelDto hotelDto)
     {
@@ -38,6 +43,16 @@ public class HotelController {
         log.info("Attempting to get all hotels");
         return ResponseEntity.ok(hotelService.getAllHotels());
     }
+    //get all bookings
+    @GetMapping("/{hotelId}/bookings")
+    public ResponseEntity<List<BookingDto>> getAllBookingsByHotelId(@PathVariable Long hotelId){
+        try {
+            return ResponseEntity.ok(bookingService.getAllBookingsByHotelId(hotelId));
+        } catch (AccessDeniedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @PutMapping("/{hotelId}")
     public ResponseEntity<HotelDto> updateHotelById(@PathVariable Long hotelId,@RequestBody HotelDto hotelDto)
     {

@@ -43,6 +43,11 @@ public class WebSecurityConfig {
                 .sessionManagement(sessionConfig->sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth->auth
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .requestMatchers("/admin/**")
                         .hasRole("HOTEL_MANAGER")
                         .requestMatchers("/auth/**")
